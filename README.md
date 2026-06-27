@@ -1,3 +1,7 @@
+# 添加了MAC端的构建
+
+
+
 # Mineradio
 
 ![Mineradio 暗场启动页](./docs/assets/readme/cinema-beat-smoke.png)
