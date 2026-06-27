@@ -31,7 +31,9 @@ const MIN_WINDOWED_WIDTH = 960;
 const MIN_WINDOWED_HEIGHT = 540;
 const APP_NAME = 'Mineradio';
 const APP_USER_MODEL_ID = 'com.mineradio.desktop';
-const APP_ICON_ICO = path.join(__dirname, '..', 'build', 'icon.ico');
+const APP_ICON = process.platform === 'darwin'
+  ? path.join(__dirname, '..', 'build', 'icon.icns')
+  : path.join(__dirname, '..', 'build', 'icon.ico');
 const NETEASE_LOGIN_PARTITION = 'persist:mineradio-netease-login';
 const NETEASE_LOGIN_URL = 'https://music.163.com/#/login';
 const QQ_LOGIN_PARTITION = 'persist:mineradio-qqmusic-login';
@@ -50,7 +52,9 @@ const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['force_high_performance_gpu'],
   ['use-angle', 'd3d11'],
 ];
+const isMacOS = process.platform === 'darwin';
 for (const [name, value] of CHROMIUM_PERFORMANCE_SWITCHES) {
+  if (isMacOS && name === 'use-angle' && value === 'd3d11') continue;
   if (value == null) app.commandLine.appendSwitch(name);
   else app.commandLine.appendSwitch(name, value);
 }
@@ -288,7 +292,7 @@ function ensureDesktopShortcut() {
       cwd: path.dirname(target),
       args: '',
       description: 'Mineradio desktop music player',
-      icon: fs.existsSync(APP_ICON_ICO) ? APP_ICON_ICO : target,
+      icon: fs.existsSync(APP_ICON) ? APP_ICON : target,
       iconIndex: 0,
       appUserModelId: APP_USER_MODEL_ID,
     };
@@ -417,7 +421,7 @@ async function openNeteaseMusicLoginWindow(owner) {
       autoHideMenuBar: true,
       title: '网易云音乐登录',
       backgroundColor: '#111111',
-      icon: APP_ICON_ICO,
+      icon: APP_ICON,
       webPreferences: {
         partition: NETEASE_LOGIN_PARTITION,
         contextIsolation: true,
@@ -519,7 +523,7 @@ async function openQQMusicLoginWindow(owner) {
       autoHideMenuBar: true,
       title: 'QQ 音乐登录',
       backgroundColor: '#111111',
-      icon: APP_ICON_ICO,
+      icon: APP_ICON,
       webPreferences: {
         partition: QQ_LOGIN_PARTITION,
         contextIsolation: true,
@@ -1357,7 +1361,7 @@ async function createWindow() {
     hasShadow: true,
     autoHideMenuBar: true,
     title: APP_NAME,
-    icon: APP_ICON_ICO,
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

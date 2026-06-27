@@ -62,7 +62,10 @@ const QQ_COOKIE_FILE = process.env.QQ_COOKIE_FILE || path.join(__dirname, '.qq-c
 const UPDATE_WORK_DIR = process.env.MINERADIO_UPDATE_DIR || path.join(__dirname, 'updates');
 const UPDATE_DOWNLOAD_DIR = process.env.MINERADIO_UPDATE_DOWNLOAD_DIR || path.join(UPDATE_WORK_DIR, 'downloads');
 const UPDATE_PATCH_BACKUP_DIR = process.env.MINERADIO_PATCH_BACKUP_DIR || path.join(UPDATE_WORK_DIR, 'backups', 'patches');
-const BEATMAP_CACHE_DIR = process.env.MINERADIO_BEAT_CACHE_DIR || 'D:\\MineradioCache\\beatmaps';
+const BEATMAP_CACHE_DIR = process.env.MINERADIO_BEAT_CACHE_DIR
+  || (process.platform === 'win32'
+    ? 'D:\\MineradioCache\\beatmaps'
+    : path.join(require('os').homedir(), 'MineradioCache', 'beatmaps'));
 const APP_PACKAGE = readPackageInfo();
 const APP_VERSION = process.env.MINERADIO_VERSION || APP_PACKAGE.version || '0.9.11';
 const UPDATE_CONFIG = readUpdateConfig(APP_PACKAGE);
@@ -364,7 +367,9 @@ function extractReleaseNotes(body) {
 }
 function pickReleaseAsset(assets) {
   const list = Array.isArray(assets) ? assets : [];
-  const preferred = list.find(a => /\.(exe|msi)$/i.test(a && a.name || ''))
+  const isMacOS = process.platform === 'darwin';
+  const installExtPattern = isMacOS ? /\.(dmg)$/i : /\.(exe|msi)$/i;
+  const preferred = list.find(a => installExtPattern.test(a && a.name || ''))
     || list.find(a => /\.(zip|7z)$/i.test(a && a.name || ''))
     || list[0];
   if (!preferred) return null;
@@ -453,7 +458,7 @@ function normalizeManifestUpdateInfo(data) {
     ? release.notes.slice(0, 4).map(cleanReleaseLine).filter(Boolean)
     : (extractReleaseNotes(release.body || data.body).length ? extractReleaseNotes(release.body || data.body) : UPDATE_FALLBACK_NOTES);
   const assetInfo = downloadUrl ? {
-    name: asset.name || updateAssetNameFromUrl(downloadUrl) || `Mineradio-${latestVersion}-Setup.exe`,
+    name: asset.name || updateAssetNameFromUrl(downloadUrl) || `Mineradio-${latestVersion}-Setup.${process.platform === 'darwin' ? 'dmg' : 'exe'}`,
     size: Number(asset.size || 0) || 0,
     contentType: asset.contentType || asset.content_type || '',
     downloadUrl,
@@ -667,7 +672,10 @@ function githubReleaseDownloadUrl(version, fileName) {
 }
 function parseLatestYmlUpdateInfo(text, reason) {
   const latestVersion = normalizeVersion(yamlScalar(text, 'version') || APP_VERSION) || APP_VERSION;
-  const assetPath = yamlScalar(text, 'path') || yamlScalar(text, 'url') || `Mineradio-${latestVersion}-Setup.exe`;
+  const defaultAssetName = process.platform === 'darwin'
+    ? `Mineradio-${latestVersion}-${process.arch}.dmg`
+    : `Mineradio-${latestVersion}-Setup.exe`;
+  const assetPath = yamlScalar(text, 'path') || yamlScalar(text, 'url') || defaultAssetName;
   const sha512 = normalizeDigest(yamlScalar(text, 'sha512'), 'sha512');
   const size = Number(yamlScalar(text, 'size') || 0) || 0;
   const releaseDate = yamlScalar(text, 'releaseDate');
@@ -764,13 +772,14 @@ async function fetchLatestUpdateInfo() {
   }
 }
 function safeUpdateFileName(name, version) {
-  const raw = String(name || '').trim() || `Mineradio-${version || APP_VERSION}.exe`;
+  const defaultExt = process.platform === 'darwin' ? '.dmg' : '.exe';
+  const raw = String(name || '').trim() || `Mineradio-${version || APP_VERSION}${defaultExt}`;
   const cleaned = raw
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 160);
-  return cleaned || `Mineradio-${version || APP_VERSION}.exe`;
+  return cleaned || `Mineradio-${version || APP_VERSION}${defaultExt}`;
 }
 function publicUpdateJob(job) {
   if (!job) return { ok: false, error: 'UPDATE_JOB_NOT_FOUND' };
@@ -1140,7 +1149,7 @@ function safePatchRelativePath(value) {
   const root = parts[0];
   if (PATCH_ALLOWED_FILES.has(rel)) return rel;
   if (!PATCH_ALLOWED_ROOTS.has(root)) return '';
-  if (/\.(exe|dll|node|msi|bat|cmd|ps1|pfx|pem|key)$/i.test(rel)) return '';
+  if (/\.(exe|dll|node|msi|bat|cmd|ps1|pfx|pem|key|app|dmg|pkg|so|dylib)$/i.test(rel)) return '';
   return parts.join('/');
 }
 function patchTargetPath(rel) {

@@ -9,7 +9,9 @@
   "scripts": {
     "start": "electron .",
     "build:win": "electron-builder --win nsis",
-    "build:win:dir": "electron-builder --win dir"
+    "build:win:dir": "electron-builder --win dir",
+    "build:mac": "electron-builder --mac dmg zip",
+    "build:mac:dir": "electron-builder --mac dir"
   },
   "build": {
     "appId": "com.mineradio.desktop",
@@ -61,6 +63,31 @@
       "include": "build/installer.nsh",
       "artifactName": "Mineradio-${version}-Setup.${ext}"
     },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.music",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "Mineradio-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Mineradio ${version}",
+      "artifactName": "Mineradio-${version}-${arch}.${ext}",
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
     "publish": [
       {
         "provider": "github",
@@ -90,7 +117,9 @@
   },
   "devDependencies": {
     "electron": "^42.4.1",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.15.3"
+  },
+  "optionalDependencies": {
     "rcedit": "^5.0.2"
   }
 }

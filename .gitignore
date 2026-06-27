@@ -10,10 +10,13 @@ releases/
 win-unpacked/
 *.exe
 *.msi
+*.dmg
 *.blockmap
 *.zip
 *.7z
 *.asar
+mac/
+mac-universal/
 
 # User data and private state
 .cookie
